@@ -1,0 +1,23 @@
+{
+  "name": "cordova-plugin-radius-networks",
+  "version": "1.0.4",
+  "description": "This plugin is used to communicate with the Radius Networks FlyBuy SDK.",
+  "keywords": [
+    "cordova",
+    "ios",
+    "android"
+  ],
+  "author": "Radius Networks",
+  "main": "FlyBuy.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "{{INSERT REPO URL}}"
+  },
+  "license": "ISC",
+  "devDependencies": {
+    "xcode": "^3.0.1"
+  }
+}
