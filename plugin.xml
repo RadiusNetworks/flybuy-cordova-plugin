@@ -82,10 +82,6 @@
         target-dir="src/com/radiusnetworks/plugin"
       />
       <source-file
-        src="src/android/OrderLiveData.java"
-        target-dir="src/com/radiusnetworks/plugin"
-      />
-      <source-file
         src="src/android/PluginHelper.java"
         target-dir="src/com/radiusnetworks/plugin"
       />
