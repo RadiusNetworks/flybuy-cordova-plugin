@@ -1,6 +1,7 @@
 #import <Cordova/CDV.h>
 #import <Cordova/CDVPluginResult.h>
-#import <FlyBuySDK/FlyBuySDK-Swift.h>
+#import <FlyBuy/FlyBuy-Swift.h>
+#import <FlyBuyPickup/FlyBuyPickup-Swift.h>
 #import "RNFlyBuy.h"
 
 

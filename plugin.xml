@@ -44,7 +44,8 @@
             </array>
         </config-file>
 
-        <framework src="libs/ios/FlyBuySDK.xcframework" custom="true" embed="true"/>
+        <framework src="libs/ios/FlyBuy.xcframework" custom="true" embed="true"/>
+        <framework src="libs/ios/FlyBuyPickup.xcframework" custom="true" embed="true"/>
     </platform>
 
     <!-- android -->
@@ -74,8 +75,9 @@
 
       <hook type="after_prepare" src="scripts/android/update_gradle_properties.js" />
 
-      <lib-file src="libs/android/aar/flybuy-sdk-latest-release-1.3.1.aar" />
-      <lib-file src="libs/android/aar/flybuy-api-release-1.3.1.aar" />
+      <lib-file src="libs/android/aar/api-release.aar" />
+      <lib-file src="libs/android/aar/core-release.aar" />
+      <lib-file src="libs/android/aar/pickup-release.aar" />
 
       <source-file
         src="src/android/RNFlyBuy.java"

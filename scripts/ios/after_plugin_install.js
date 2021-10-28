@@ -14,7 +14,7 @@ module.exports = function(context) {
   if (!buildPhase) {
     const result = xcodeProject.addBuildPhase([], "PBXShellScriptBuildPhase", comment, null, {
       shellPath: "/bin/sh",
-      shellScript: 'FB_BIN="${TARGET_BUILD_DIR}/${WRAPPER_NAME}/Frameworks/FlyBuySDK.xcframework/FlyBuySDK"; lipo -remove x86_64 "$FB_BIN" -o "$FB_BIN";',
+      shellScript: 'FB_BIN="${TARGET_BUILD_DIR}/${WRAPPER_NAME}/Frameworks/FlyBuy.xcframework/FlyBuy"; lipo -remove x86_64 "$FB_BIN" -o "$FB_BIN";',
     });
 
     // Fixes build issue on Xcode 12.3.
