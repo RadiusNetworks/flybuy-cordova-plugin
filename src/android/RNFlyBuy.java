@@ -6,7 +6,6 @@ import android.util.Log;
 
 import com.radiusnetworks.flybuy.sdk.FlyBuyCore;
 import com.radiusnetworks.flybuy.sdk.pickup.PickupManager;
-import com.radiusnetworks.flybuy.sdk.data.customer.CustomerConsent;
 import com.radiusnetworks.flybuy.sdk.data.customer.CustomerInfo;
 import com.radiusnetworks.flybuy.sdk.data.room.domain.Customer;
 import com.radiusnetworks.flybuy.sdk.data.room.domain.Order;
@@ -53,7 +52,8 @@ public class RNFlyBuy extends CordovaPlugin {
 
       Log.d(TAG, ACTION_NAME + ": Obtained APP_TOKEN: " + APP_TOKEN);
       FlyBuyCore.configure(cordova.getActivity().getApplicationContext(), APP_TOKEN);
-      PickupManager.getInstance().configure(cordova.getActivity().getApplicationContext());
+      ((PickupManager)PickupManager.manager.getInstance(null)).configure(cordova.getActivity().getApplicationContext());
+      //PickupManager.getInstance().configure(cordova.getActivity().getApplicationContext());
       isRNFlyBuyConfigured = true;
     } catch (Exception e) {
       Log.e(TAG, ACTION_NAME + ": Failed to initialize FlyBuy SDK with exception: " + e.getMessage());
@@ -136,17 +136,18 @@ public class RNFlyBuy extends CordovaPlugin {
    @Override
    public void onStart() {
      super.onStart();
-     FlyBuyCore.onActivityStarted();
+     FlyBuyCore.instance.onActivityStarted();
    }
 
    @Override
    public void onStop() {
     super.onStop();
-    FlyBuyCore.onActivityStopped();
+    FlyBuyCore.instance.onActivityStopped();
    }
 
    private void onLocationPermissionChanged(JSONArray data, CallbackContext callbackContext) {
-    PickupManager.getInstance().onLocationPermissionChanged();
+    ((PickupManager)PickupManager.manager.getInstance(null)).onLocationPermissionChanged();
+    //PickupManager.getInstance().onLocationPermissionChanged();
     callbackContext.success();
   }
 
@@ -178,7 +179,8 @@ public class RNFlyBuy extends CordovaPlugin {
     PluginResult result = new PluginResult(PluginResult.Status.OK, grantResult);
     result.setKeepCallback(true);
     locationRequestContext.sendPluginResult(result);
-    PickupManager.getInstance().onLocationPermissionChanged();
+    ((PickupManager)PickupManager.manager.getInstance(null)).onLocationPermissionChanged();
+    //PickupManager.getInstance().onLocationPermissionChanged();
   }
 
   private void createCustomer(JSONArray data, CallbackContext callbackContext) {
@@ -194,11 +196,9 @@ public class RNFlyBuy extends CordovaPlugin {
       JSONObject rawCustomerInfo = data.getJSONObject(0);
       Boolean termsOfService = rawCustomerInfo.optBoolean("termsOfService", false);
       Boolean ageVerification = rawCustomerInfo.optBoolean("ageVerification", false);
-
       CustomerInfo customerInfo = getCustomerInfo(rawCustomerInfo);
-      CustomerConsent customerConsent = new CustomerConsent(termsOfService, ageVerification);
 
-      FlyBuyCore.customer.create(customerInfo, customerConsent, (customer, sdkError) -> {
+      FlyBuyCore.customer.create(customerInfo, termsOfService, ageVerification (customer, sdkError) -> {
         PluginResult result = null;
 
         if (sdkError != null) {
@@ -375,7 +375,7 @@ public class RNFlyBuy extends CordovaPlugin {
       if (status.equals("open")) {
         orders = FlyBuyCore.orders.open;
       } else if (status.equals("closed")) {
-        orders = new List<Order>(); // not supported
+        orders = new ArrayList<Order>(); // not supported
       } else {
         orders = FlyBuyCore.orders.all;
       }
