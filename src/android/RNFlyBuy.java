@@ -4,10 +4,10 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.util.Log;
 
-import com.radiusnetworks.flybuy.sdk.FlyBuy;
+import com.radiusnetworks.flybuy.sdk.FlyBuyCore;
+import com.radiusnetworks.flybuy.sdk.pickup.PickupManager;
 import com.radiusnetworks.flybuy.sdk.data.customer.CustomerConsent;
 import com.radiusnetworks.flybuy.sdk.data.customer.CustomerInfo;
-import com.radiusnetworks.flybuy.sdk.data.customer.CustomerState;
 import com.radiusnetworks.flybuy.sdk.data.room.domain.Customer;
 import com.radiusnetworks.flybuy.sdk.data.room.domain.Order;
 
@@ -52,7 +52,8 @@ public class RNFlyBuy extends CordovaPlugin {
     try {
 
       Log.d(TAG, ACTION_NAME + ": Obtained APP_TOKEN: " + APP_TOKEN);
-      FlyBuy.configure(cordova.getActivity().getApplicationContext(), APP_TOKEN);
+      FlyBuyCore.configure(cordova.getActivity().getApplicationContext(), APP_TOKEN);
+      PickupManager.getInstance().configure(cordova.getActivity().getApplicationContext());
       isRNFlyBuyConfigured = true;
     } catch (Exception e) {
       Log.e(TAG, ACTION_NAME + ": Failed to initialize FlyBuy SDK with exception: " + e.getMessage());
@@ -135,17 +136,17 @@ public class RNFlyBuy extends CordovaPlugin {
    @Override
    public void onStart() {
      super.onStart();
-     FlyBuy.onActivityStarted();
+     FlyBuyCore.onActivityStarted();
    }
 
    @Override
    public void onStop() {
     super.onStop();
-    FlyBuy.onActivityStopped();
+    FlyBuyCore.onActivityStopped();
    }
 
    private void onLocationPermissionChanged(JSONArray data, CallbackContext callbackContext) {
-    FlyBuy.onLocationPermissionChanged();
+    PickupManager.getInstance().onLocationPermissionChanged();
     callbackContext.success();
   }
 
@@ -177,7 +178,7 @@ public class RNFlyBuy extends CordovaPlugin {
     PluginResult result = new PluginResult(PluginResult.Status.OK, grantResult);
     result.setKeepCallback(true);
     locationRequestContext.sendPluginResult(result);
-    FlyBuy.onLocationPermissionChanged();
+    PickupManager.getInstance().onLocationPermissionChanged();
   }
 
   private void createCustomer(JSONArray data, CallbackContext callbackContext) {
@@ -197,7 +198,7 @@ public class RNFlyBuy extends CordovaPlugin {
       CustomerInfo customerInfo = getCustomerInfo(rawCustomerInfo);
       CustomerConsent customerConsent = new CustomerConsent(termsOfService, ageVerification);
 
-      FlyBuy.customer.create(customerInfo, customerConsent, (customer, sdkError) -> {
+      FlyBuyCore.customer.create(customerInfo, customerConsent, (customer, sdkError) -> {
         PluginResult result = null;
 
         if (sdkError != null) {
@@ -225,7 +226,7 @@ public class RNFlyBuy extends CordovaPlugin {
           JSONObject rawCustomerInfo = data.getJSONObject(0);
           CustomerInfo customerInfo = getCustomerInfo(rawCustomerInfo);
     
-          FlyBuy.customer.update(customerInfo, (customer, sdkError) -> {
+          FlyBuyCore.customer.update(customerInfo, (customer, sdkError) -> {
             PluginResult result = null;
     
             if (sdkError != null) {
@@ -256,7 +257,7 @@ public class RNFlyBuy extends CordovaPlugin {
         return;
       }
 
-      FlyBuy.customer.loginWithToken(TOKEN, (customer, sdkError) -> {
+      FlyBuyCore.customer.loginWithToken(TOKEN, (customer, sdkError) -> {
         PluginResult result = null;
 
         if (sdkError != null) {
@@ -287,7 +288,7 @@ public class RNFlyBuy extends CordovaPlugin {
         return;
       }
 
-      FlyBuy.orders.claim(REDEEM_CODE, customerInfo, pickupType, (order, sdkError) -> {
+      FlyBuyCore.orders.claim(REDEEM_CODE, customerInfo, pickupType, (order, sdkError) -> {
         PluginResult result = null;
         if (sdkError != null) {
           result = PluginHelper.handleSdkError(sdkError, ACTION_NAME);
@@ -310,14 +311,14 @@ public class RNFlyBuy extends CordovaPlugin {
     try { 
       JSONObject raw = data.getJSONObject(0);
       final int ORDER_ID = raw.optInt("orderId", 0);
-      CustomerState customerState = getCustomerState(raw.optString("customerState"));
+      String customerState = raw.optString("customerState");
 
       if (ORDER_ID < 1) {
         PluginHelper.sendError(callbackContext, "orderId must be a number and greater than 0");
         return;
       }
       
-      FlyBuy.orders.event(ORDER_ID, customerState, (order, sdkError) -> {
+      FlyBuyCore.orders.updateCustomerState(ORDER_ID, customerState, (order, sdkError) -> {
         PluginResult result = PluginHelper.handleOrderResult(order, sdkError, ACTION_NAME);
         callbackContext.sendPluginResult(result);
         return null;
@@ -329,7 +330,7 @@ public class RNFlyBuy extends CordovaPlugin {
 
   private void fetchOrders(CallbackContext callbackContext) { 
     final String ACTION_NAME = "fetchOrders";
-    FlyBuy.orders.fetch((orders, sdkError) -> {
+    FlyBuyCore.orders.fetch((orders, sdkError) -> {
       PluginResult result = null;
       if (sdkError != null) {
         result = PluginHelper.handleSdkError(sdkError, ACTION_NAME);
@@ -352,7 +353,7 @@ public class RNFlyBuy extends CordovaPlugin {
         return;
       }
 
-      FlyBuy.orders.fetch(REDEEM_CODE, (order, sdkError) -> {
+      FlyBuyCore.orders.fetch(REDEEM_CODE, (order, sdkError) -> {
         PluginResult result = PluginHelper.handleOrderResult(order, sdkError, ACTION_NAME);
         callbackContext.sendPluginResult(result);
         return null;
@@ -372,11 +373,11 @@ public class RNFlyBuy extends CordovaPlugin {
       List<Order> orders = null;
 
       if (status.equals("open")) {
-        orders = FlyBuy.orders.getOpen();
+        orders = FlyBuyCore.orders.open;
       } else if (status.equals("closed")) {
-        orders = FlyBuy.orders.getClosed();
+        orders = new List<Order>(); // not supported
       } else {
-        orders = FlyBuy.orders.getAll();
+        orders = FlyBuyCore.orders.all;
       }
       PluginResult result = PluginHelper.getOrdersResult(orders);
       callbackContext.sendPluginResult(result);
@@ -386,7 +387,7 @@ public class RNFlyBuy extends CordovaPlugin {
   }
 
   private void logout(CallbackContext callbackContext) {
-    FlyBuy.customer.logout((sdkError) -> {
+    FlyBuyCore.customer.logout((sdkError) -> {
       PluginResult result = sdkError != null? PluginHelper.handleSdkError(sdkError, "logout") : new PluginResult(PluginResult.Status.OK);
       callbackContext.sendPluginResult(result);
       return null;
@@ -395,7 +396,7 @@ public class RNFlyBuy extends CordovaPlugin {
 
   // Internal functions
   private CustomerInfo getCurrentCustomerInfo() {
-    Customer currentCustomer = FlyBuy.customer.getCurrent();
+    Customer currentCustomer = FlyBuyCore.customer.current;
 
     if (currentCustomer == null) { return null; }
     return new CustomerInfo(currentCustomer.getName(), currentCustomer.getPhone(), currentCustomer.getCarType(), currentCustomer.getCarColor(), currentCustomer.getLicensePlate());
@@ -425,24 +426,6 @@ public class RNFlyBuy extends CordovaPlugin {
       return PickupType.DELIVERY.toString().toLowerCase();
     }
     return "";
-  }
-
-  private CustomerState getCustomerState(String value) {
-    if (value.equalsIgnoreCase(CustomerState.CREATED.toString())) {
-      return CustomerState.CREATED;
-    } else if (value.equalsIgnoreCase(CustomerState.EN_ROUTE.toString())) {
-      return CustomerState.EN_ROUTE;
-    } else if (value.equalsIgnoreCase(CustomerState.NEARBY.toString())) {
-      return CustomerState.NEARBY;
-    } else if (value.equalsIgnoreCase(CustomerState.ARRIVED.toString())) {
-      return CustomerState.ARRIVED;
-    } else if (value.equalsIgnoreCase(CustomerState.WAITING.toString())) {
-      return CustomerState.WAITING;
-    } else if (value.equalsIgnoreCase(CustomerState.COMPLETED.toString())) {
-      return CustomerState.COMPLETED;
-    }
-
-    return CustomerState.UNKNOWN;
   }
 
   private void exitIfNoCurrentCustomer(String ACTION_NAME) throws Exception {

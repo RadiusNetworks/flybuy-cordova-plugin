@@ -34,7 +34,7 @@ public class OrderLiveData {
 
   private LiveData<Order> getLiveData() {
     if (liveOrderData == null && subscribedOrderId > 0) {
-      liveOrderData = FlyBuy.orders.getOrder(subscribedOrderId);
+      liveOrderData = FlyBuyCore.orders.getOrder(subscribedOrderId);
     }
     return liveOrderData;
   }
