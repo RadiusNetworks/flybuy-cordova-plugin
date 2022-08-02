@@ -22,7 +22,7 @@ import org.json.JSONObject;
 
 import java.util.Arrays;
 import java.util.List;
-
+import java.util.ArrayList;
 
 public class RNFlyBuy extends CordovaPlugin {
   private static final String TAG = "RadiusNetworksFlyBuy";
@@ -52,8 +52,7 @@ public class RNFlyBuy extends CordovaPlugin {
 
       Log.d(TAG, ACTION_NAME + ": Obtained APP_TOKEN: " + APP_TOKEN);
       FlyBuyCore.configure(cordova.getActivity().getApplicationContext(), APP_TOKEN);
-      ((PickupManager)PickupManager.manager.getInstance(null)).configure(cordova.getActivity().getApplicationContext());
-      //PickupManager.getInstance().configure(cordova.getActivity().getApplicationContext());
+      PickupManager.Companion.getInstance(null).configure(this);
       isRNFlyBuyConfigured = true;
     } catch (Exception e) {
       Log.e(TAG, ACTION_NAME + ": Failed to initialize FlyBuy SDK with exception: " + e.getMessage());
@@ -136,18 +135,17 @@ public class RNFlyBuy extends CordovaPlugin {
    @Override
    public void onStart() {
      super.onStart();
-     FlyBuyCore.instance.onActivityStarted();
+     FlyBuyCore.INSTANCE.onActivityStarted();
    }
 
    @Override
    public void onStop() {
     super.onStop();
-    FlyBuyCore.instance.onActivityStopped();
+    FlyBuyCore.INSTANCE.onActivityStopped();
    }
 
    private void onLocationPermissionChanged(JSONArray data, CallbackContext callbackContext) {
-    ((PickupManager)PickupManager.manager.getInstance(null)).onLocationPermissionChanged();
-    //PickupManager.getInstance().onLocationPermissionChanged();
+    PickupManager.Companion.getInstance(null).onPermissionChanged();
     callbackContext.success();
   }
 
@@ -198,7 +196,7 @@ public class RNFlyBuy extends CordovaPlugin {
       Boolean ageVerification = rawCustomerInfo.optBoolean("ageVerification", false);
       CustomerInfo customerInfo = getCustomerInfo(rawCustomerInfo);
 
-      FlyBuyCore.customer.create(customerInfo, termsOfService, ageVerification (customer, sdkError) -> {
+      FlyBuyCore.customer.create(customerInfo, termsOfService, ageVerification, null, null (customer, sdkError) -> {
         PluginResult result = null;
 
         if (sdkError != null) {
@@ -373,11 +371,11 @@ public class RNFlyBuy extends CordovaPlugin {
       List<Order> orders = null;
 
       if (status.equals("open")) {
-        orders = FlyBuyCore.orders.open;
+        orders = FlyBuyCore.orders.getOpen();
       } else if (status.equals("closed")) {
         orders = new ArrayList<Order>(); // not supported
       } else {
-        orders = FlyBuyCore.orders.all;
+        orders = FlyBuyCore.orders.getAll();
       }
       PluginResult result = PluginHelper.getOrdersResult(orders);
       callbackContext.sendPluginResult(result);
@@ -396,7 +394,7 @@ public class RNFlyBuy extends CordovaPlugin {
 
   // Internal functions
   private CustomerInfo getCurrentCustomerInfo() {
-    Customer currentCustomer = FlyBuyCore.customer.current;
+    Customer currentCustomer = FlyBuyCore.customer.getCurrent();
 
     if (currentCustomer == null) { return null; }
     return new CustomerInfo(currentCustomer.getName(), currentCustomer.getPhone(), currentCustomer.getCarType(), currentCustomer.getCarColor(), currentCustomer.getLicensePlate());
