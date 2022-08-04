@@ -308,14 +308,15 @@ public class RNFlyBuy extends CordovaPlugin {
     try { 
       JSONObject raw = data.getJSONObject(0);
       final int ORDER_ID = raw.optInt("orderId", 0);
-      String customerState = raw.optString("customerState");
+      CustomerState customerState = getCustomerState(raw.optString("customerState"));
+      String customerStateString = customerState.toString().toLowerCase();
 
       if (ORDER_ID < 1) {
         PluginHelper.sendError(callbackContext, "orderId must be a number and greater than 0");
         return;
       }
       
-      FlyBuyCore.orders.updateCustomerState(ORDER_ID, customerState, (order, sdkError) -> {
+      FlyBuyCore.orders.updateCustomerState(ORDER_ID, customerStateString, (order, sdkError) -> {
         PluginResult result = PluginHelper.handleOrderResult(order, sdkError, ACTION_NAME);
         callbackContext.sendPluginResult(result);
         return null;
@@ -423,6 +424,24 @@ public class RNFlyBuy extends CordovaPlugin {
       return PickupType.DELIVERY.toString().toLowerCase();
     }
     return "";
+  }
+
+  private CustomerState getCustomerState(String value) {
+    if (value.equalsIgnoreCase(CustomerState.CREATED.toString())) {
+      return CustomerState.CREATED;
+    } else if (value.equalsIgnoreCase(CustomerState.EN_ROUTE.toString())) {
+      return CustomerState.EN_ROUTE;
+    } else if (value.equalsIgnoreCase(CustomerState.NEARBY.toString())) {
+      return CustomerState.NEARBY;
+    } else if (value.equalsIgnoreCase(CustomerState.ARRIVED.toString())) {
+      return CustomerState.ARRIVED;
+    } else if (value.equalsIgnoreCase(CustomerState.WAITING.toString())) {
+      return CustomerState.WAITING;
+    } else if (value.equalsIgnoreCase(CustomerState.COMPLETED.toString())) {
+      return CustomerState.COMPLETED;
+    }
+
+    return CustomerState.UNKNOWN;
   }
 
   private void exitIfNoCurrentCustomer(String ACTION_NAME) throws Exception {
